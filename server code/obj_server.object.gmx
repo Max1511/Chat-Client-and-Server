@@ -1,0 +1,116 @@
+<object>
+  <spriteName>&lt;undefined&gt;</spriteName>
+  <solid>0</solid>
+  <visible>-1</visible>
+  <depth>0</depth>
+  <persistent>0</persistent>
+  <parentName>&lt;undefined&gt;</parentName>
+  <maskName>&lt;undefined&gt;</maskName>
+  <events>
+    <event eventtype="0" enumb="0">
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>server = network_create_server(network_socket_tcp, 10001, 2);   //tcp подключение
+buffer_send = buffer_create(128, buffer_grow, 1); //создание буфера обмена
+global.n_max = 0; //максимальный индекс пользователей
+max_users = 20; 
+
+for (i = 0; i &lt; max_users; i++)
+{
+    user[i] = -1;
+}
+</string>
+          </argument>
+        </arguments>
+      </action>
+    </event>
+    <event eventtype="7" enumb="68">
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>eventid = ds_map_find_value(async_load, "id");
+type = ds_map_find_value(async_load, "type");
+sock = ds_map_find_value(async_load, "socket");
+ip = ds_map_find_value(async_load, "ip");
+
+if type = network_type_connect
+{            
+    user[sock] = instance_create(0, 0, obj_user);
+    user[sock].sock = sock;
+    user[sock].ip = ip;
+    user[sock].initiated = false
+    if sock &gt; global.n_max global.n_max = sock;
+    buffer_seek(buffer_send, buffer_seek_start, 0);
+    buffer_write(buffer_send, buffer_s16, sock );
+    buffer_write(buffer_send, buffer_s16, 0 );
+    send_to_all_except_one_tcp(sock);
+}
+if type = network_type_data
+{
+    if (!user[eventid].initiated)
+    {
+        send_starting_info();
+        user[eventid].initiated = true;           
+    }
+    msg_buff = ds_map_find_value(async_load, "buffer");
+    user[eventid].name = buffer_read(msg_buff, buffer_string);
+    new_message = buffer_read(msg_buff, buffer_string);
+    if (string_length(new_message) &gt; 0)
+    {
+        obj_chat.text[obj_chat.num] = new_message;
+        obj_chat.sender[obj_chat.num] = user[eventid].name;
+        obj_chat.num++;
+    }
+    buffer_seek(buffer_send, buffer_seek_start, 0);
+    buffer_write(buffer_send, buffer_s16, eventid);
+    buffer_write(buffer_send, buffer_s16, 1);
+    buffer_write(buffer_send, buffer_string, user[eventid].name);
+    buffer_write(buffer_send, buffer_string, new_message);
+    send_to_all();
+}
+if type = network_type_disconnect
+{
+    with (user[sock])
+    {
+        instance_destroy();
+    }
+    obj_server.user[sock] = -1;
+    buffer_seek(buffer_send, buffer_seek_start, 0);
+    buffer_write(buffer_send, buffer_s16, sock );
+    buffer_write(buffer_send, buffer_s16, 2 );
+    send_to_all_except_one_tcp(sock);
+}
+</string>
+          </argument>
+        </arguments>
+      </action>
+    </event>
+  </events>
+</object>

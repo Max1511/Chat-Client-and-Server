@@ -1,0 +1,134 @@
+<object>
+  <spriteName>&lt;undefined&gt;</spriteName>
+  <solid>0</solid>
+  <visible>-1</visible>
+  <depth>0</depth>
+  <persistent>0</persistent>
+  <parentName>&lt;undefined&gt;</parentName>
+  <maskName>&lt;undefined&gt;</maskName>
+  <events>
+    <event eventtype="0" enumb="0">
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>client = network_create_socket(network_socket_tcp); //создание клиента
+ip = get_string("Enter server ip", "127.0.0.1"); //ввод ip адреса
+port = get_string("Enter port number", "10001"); //ввод номер порта
+name = get_string("Enter your name", "User"); //ввод номер порта
+network_connect(client, ip, port); //осуществить подключение
+
+buffer_send = buffer_create(128, buffer_grow, 1); //создать буфер обмена
+
+send = true; //требуется ли отправить сообщение
+
+max_users = 20;
+for (i = 0; i &lt; max_users; i++)
+{
+    user[i] = -1;
+}
+</string>
+          </argument>
+        </arguments>
+      </action>
+    </event>
+    <event eventtype="3" enumb="0">
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>if (send)
+{   
+    buffer_seek(buffer_send, buffer_seek_start, 0);
+    buffer_write(buffer_send, buffer_string, obj_network.name);
+    buffer_write(buffer_send, buffer_string, obj_input.message);
+    network_send_packet( client, buffer_send, buffer_tell(buffer_send) );
+    
+    keyboard_string = "";
+    obj_input.message = "";
+    
+    send = false;
+}
+</string>
+          </argument>
+        </arguments>
+      </action>
+    </event>
+    <event eventtype="7" enumb="68">
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>t = ds_map_find_value(async_load, "type"); //тип переданных данных
+
+if t = network_type_data
+{
+    msg_buff = ds_map_find_value(async_load, "buffer");
+    sender = buffer_read(msg_buff, buffer_s16);
+    type = buffer_read(msg_buff, buffer_s16);
+    switch(type)
+        {
+            case 0:
+     user[sender] = instance_create(0, 0, obj_other_user);
+            break;
+            
+            case 1:
+     user[sender].name = buffer_read(msg_buff, buffer_string);
+     obj_chat.text[obj_chat.num] = buffer_read(msg_buff, buffer_string);
+     obj_chat.sender[obj_chat.num] = user[sender].name;
+     obj_chat.num++;             
+            break;
+            
+            case 2:
+       with(user[sender])
+       {
+          instance_destroy();
+       }
+       user[sender] = -1;
+            break;
+            
+        }                    
+}
+</string>
+          </argument>
+        </arguments>
+      </action>
+    </event>
+  </events>
+</object>
