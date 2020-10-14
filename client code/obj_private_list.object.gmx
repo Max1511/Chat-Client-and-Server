@@ -27,11 +27,19 @@
             <string>draw_self();
 draw_set_halign(fa_left);
 draw_set_valign(fa_top);
-for (var i = 0; i &lt; obj_server.max_users; ++i)
+draw_set_colour(c_black);
+for (var i = 0; i &lt; obj_network.max_users; ++i)
 {
-    if (obj_server.user[i] != -1)
-        draw_text(x, y+(i*16), obj_server.user[i].name);
+    var j = 1;
+    if ( obj_network.user[i] != -1)
+        if (obj_network.user[i].private)
+        {
+            draw_text(x, y+(j*16), obj_network.user[i].name);
+            j++;
+        }
 }
+draw_set_colour(c_green);
+draw_text(x, y, obj_network.name);
 </string>
           </argument>
         </arguments>

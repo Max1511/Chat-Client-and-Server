@@ -27,11 +27,16 @@
             <string>server = network_create_server(network_socket_tcp, 10001, 2);   //tcp подключение
 buffer_send = buffer_create(128, buffer_grow, 1); //создание буфера обмена
 global.n_max = 0; //максимальный индекс пользователей
-max_users = 20; 
+max_users = 20;
+private_num = 0;
 
 for (i = 0; i &lt; max_users; i++)
 {
     user[i] = -1;
+}
+for (i = 0; i &lt; max_users; i++)
+{
+    private_chat[i] = -1;
 }
 </string>
           </argument>
@@ -80,20 +85,123 @@ if type = network_type_data
         user[eventid].initiated = true;           
     }
     msg_buff = ds_map_find_value(async_load, "buffer");
-    user[eventid].name = buffer_read(msg_buff, buffer_string);
-    new_message = buffer_read(msg_buff, buffer_string);
-    if (string_length(new_message) &gt; 0)
+    var message_type = buffer_read(msg_buff, buffer_s16);
+    if (message_type == -1)
     {
-        obj_chat.text[obj_chat.num] = new_message;
-        obj_chat.sender[obj_chat.num] = user[eventid].name;
-        obj_chat.num++;
+        user[eventid].name = buffer_read(msg_buff, buffer_string);
+        
+        buffer_seek(buffer_send, buffer_seek_start, 0);
+        buffer_write(buffer_send, buffer_s16, eventid);
+        buffer_write(buffer_send, buffer_s16, 1);
+        buffer_write(buffer_send, buffer_s16, -1);
+        buffer_write(buffer_send, buffer_string, user[eventid].name);
+        send_to_all_except_one_tcp(eventid);
     }
-    buffer_seek(buffer_send, buffer_seek_start, 0);
-    buffer_write(buffer_send, buffer_s16, eventid);
-    buffer_write(buffer_send, buffer_s16, 1);
-    buffer_write(buffer_send, buffer_string, user[eventid].name);
-    buffer_write(buffer_send, buffer_string, new_message);
-    send_to_all();
+    if (message_type == 0)
+    {
+        new_message = buffer_read(msg_buff, buffer_string);
+        
+        if (string_length(new_message) &gt; 0)
+        {
+            if (user[eventid].private_id == -1)
+            {
+                obj_chat.text[obj_chat.num] = new_message;
+                obj_chat.sender[obj_chat.num] = user[eventid].name;
+                obj_chat.num++;
+                
+                buffer_seek(buffer_send, buffer_seek_start, 0);
+                buffer_write(buffer_send, buffer_s16, eventid);
+                buffer_write(buffer_send, buffer_s16, 1);
+                buffer_write(buffer_send, buffer_s16, 0);
+                buffer_write(buffer_send, buffer_string, new_message);
+                send_to_all();
+            }
+            else
+            {
+                buffer_seek(buffer_send, buffer_seek_start, 0);
+                buffer_write(buffer_send, buffer_s16, eventid);
+                buffer_write(buffer_send, buffer_s16, 1);
+                buffer_write(buffer_send, buffer_s16, 0);
+                buffer_write(buffer_send, buffer_string, new_message);
+                send_to_private(user[eventid].private_id);
+            }
+        }
+    }
+    else if (message_type == 1)
+    {
+        if (private_chat[private_num] == -1)
+        {
+            var make_private_chat = true;
+            for (var i = 0; i &lt; private_num; ++i)
+                if (private_chat[i].private_user[0] == eventid)
+                {
+                    make_private_chat = false;
+                    break;
+                }
+            if (make_private_chat)
+            {
+                private_chat[private_num] = 1;
+                user[eventid].private_id = private_num;
+                private_num++;
+            }
+        }
+    
+        var for_user = buffer_read(msg_buff, buffer_string);
+        var index = -1;
+        for (var i = 0; i &lt; max_users; ++i)
+            if (user[i] != -1)
+                if (user[i].name == for_user)
+                {
+                    index = i;
+                    break;
+                }
+        
+        if (index != -1)
+        {
+            buffer_seek(buffer_send, buffer_seek_start, 0);
+            buffer_write(buffer_send, buffer_s16, eventid);
+            buffer_write(buffer_send, buffer_s16, 1);
+            buffer_write(buffer_send, buffer_s16, 1);
+            buffer_write(buffer_send, buffer_s16, user[eventid].private_id);
+            network_send_packet( user[index].sock, buffer_send, buffer_tell(buffer_send) );
+        }
+    }
+    else if (message_type == 2)
+    {
+        var priv = buffer_read(msg_buff, buffer_s16);
+        user[eventid].private_id = priv;
+    
+        buffer_seek(buffer_send, buffer_seek_start, 0);
+        buffer_write(buffer_send, buffer_s16, eventid);
+        buffer_write(buffer_send, buffer_s16, 1);
+        buffer_write(buffer_send, buffer_s16, 2);
+        send_to_private(priv);
+        
+        for (var i = 0; i &lt; obj_server.max_users; ++i)
+        {
+            if (obj_server.user[i] != -1)
+                if (obj_server.user[i].sock != eventid)
+                    if obj_server.user[i].private_id == priv
+                    {
+                        buffer_seek(buffer_send, buffer_seek_start, 0);
+                        buffer_write(buffer_send, buffer_s16, user[i].sock);
+                        buffer_write(buffer_send, buffer_s16, 1);
+                        buffer_write(buffer_send, buffer_s16, 2);
+                        network_send_packet( eventid, buffer_send, buffer_tell(buffer_send) );
+                    }
+        }
+    }
+    else if (message_type == 3)
+    {
+        var priv = user[eventid].private_id;
+        user[eventid].private_id = -1;
+    
+        buffer_seek(buffer_send, buffer_seek_start, 0);
+        buffer_write(buffer_send, buffer_s16, eventid);
+        buffer_write(buffer_send, buffer_s16, 1);
+        buffer_write(buffer_send, buffer_s16, 3);
+        send_to_private(priv);
+    }
 }
 if type = network_type_disconnect
 {

@@ -1,5 +1,5 @@
 <object>
-  <spriteName>spr_list</spriteName>
+  <spriteName>&lt;undefined&gt;</spriteName>
   <solid>0</solid>
   <visible>-1</visible>
   <depth>0</depth>
@@ -7,7 +7,7 @@
   <parentName>&lt;undefined&gt;</parentName>
   <maskName>&lt;undefined&gt;</maskName>
   <events>
-    <event eventtype="8" enumb="0">
+    <event eventtype="0" enumb="0">
       <action>
         <libid>1</libid>
         <id>603</id>
@@ -24,13 +24,9 @@
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>draw_self();
-draw_set_halign(fa_left);
-draw_set_valign(fa_top);
-for (var i = 0; i &lt; obj_server.max_users; ++i)
+            <string>for (var i = 0; i &lt; obj_server.max_users; ++i)
 {
-    if (obj_server.user[i] != -1)
-        draw_text(x, y+(i*16), obj_server.user[i].name);
+    private_user[i] = -1;
 }
 </string>
           </argument>

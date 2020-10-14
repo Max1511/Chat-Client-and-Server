@@ -47,11 +47,18 @@
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>if (enter &amp;&amp; string_length(obj_input.message) &gt; 0)
+            <string>if (string_length(obj_input.message) &gt; 0)
 {
-    if (mouse_check_button_released(mb_left))
+    if (keyboard_check_pressed(vk_enter))
     {
         obj_network.send = true;
+    }
+    else if (enter)
+    {
+        if (mouse_check_button_released(mb_left))
+        {
+            obj_network.send = true;
+        }
     }
 }
 </string>

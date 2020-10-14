@@ -24,8 +24,9 @@
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>initiated = false; //проявлял ли активность пользователь
+            <string>initiated = false; //инициализирован ли пользователь
 name = "";
+private_id = -1;
 </string>
           </argument>
         </arguments>

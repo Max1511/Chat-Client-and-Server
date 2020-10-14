@@ -3,7 +3,7 @@
   <solid>0</solid>
   <visible>-1</visible>
   <depth>0</depth>
-  <persistent>0</persistent>
+  <persistent>-1</persistent>
   <parentName>&lt;undefined&gt;</parentName>
   <maskName>&lt;undefined&gt;</maskName>
   <events>
@@ -32,12 +32,19 @@ network_connect(client, ip, port); //осуществить подключени
 
 buffer_send = buffer_create(128, buffer_grow, 1); //создать буфер обмена
 
-send = true; //требуется ли отправить сообщение
+first_send = true; //отправить начальную информацию о пользователе
+send = false; //требуется ли отправить сообщение
+invite = 0; //кол-во приглашений
+accept = false; //принять приглашение
+logoff = false; //выйти из приватного чата
+
+private_id = -1; //id приватного чата, к которому подлючен пользователь
 
 max_users = 20;
 for (i = 0; i &lt; max_users; i++)
 {
     user[i] = -1;
+    for_user[i] = "";
 }
 </string>
           </argument>
@@ -61,10 +68,19 @@ for (i = 0; i &lt; max_users; i++)
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>if (send)
+            <string>if (first_send)
+{
+    buffer_seek(buffer_send, buffer_seek_start, 0);
+    buffer_write(buffer_send, buffer_s16, -1);   //передача начальных данных
+    buffer_write(buffer_send, buffer_string, obj_network.name);
+    network_send_packet( client, buffer_send, buffer_tell(buffer_send) );
+    
+    first_send = false;
+}
+if (send)
 {   
     buffer_seek(buffer_send, buffer_seek_start, 0);
-    buffer_write(buffer_send, buffer_string, obj_network.name);
+    buffer_write(buffer_send, buffer_s16, 0);   //стандартное сообщение
     buffer_write(buffer_send, buffer_string, obj_input.message);
     network_send_packet( client, buffer_send, buffer_tell(buffer_send) );
     
@@ -72,6 +88,35 @@ for (i = 0; i &lt; max_users; i++)
     obj_input.message = "";
     
     send = false;
+}
+else if (invite &gt; 0)
+{
+    buffer_seek(buffer_send, buffer_seek_start, 0);
+    buffer_write(buffer_send, buffer_s16, 1);   //приглашение в приватный чат
+    buffer_write(buffer_send, buffer_string, for_user[invite-1]);
+    network_send_packet( client, buffer_send, buffer_tell(buffer_send) );
+    
+    invite--;
+}
+else if (accept)
+{
+    buffer_seek(buffer_send, buffer_seek_start, 0);
+    buffer_write(buffer_send, buffer_s16, 2);   //принятие приглашения
+    buffer_write(buffer_send, buffer_s16, private_id);
+    network_send_packet( client, buffer_send, buffer_tell(buffer_send) );
+    room_goto(room_private);
+    
+    accept = false;
+}
+else if (logoff)
+{
+    buffer_seek(buffer_send, buffer_seek_start, 0);
+    buffer_write(buffer_send, buffer_s16, 3);   //отключение от приватного чата
+    buffer_write(buffer_send, buffer_s16, private_id);
+    network_send_packet( client, buffer_send, buffer_tell(buffer_send) );
+    room_goto(room0);
+    
+    logoff = false;
 }
 </string>
           </argument>
@@ -109,10 +154,31 @@ if t = network_type_data
             break;
             
             case 1:
-     user[sender].name = buffer_read(msg_buff, buffer_string);
-     obj_chat.text[obj_chat.num] = buffer_read(msg_buff, buffer_string);
-     obj_chat.sender[obj_chat.num] = user[sender].name;
-     obj_chat.num++;             
+     var message_type = buffer_read(msg_buff, buffer_s16);
+     if (message_type == -1)
+     {
+        user[sender].name = buffer_read(msg_buff, buffer_string);
+     }
+     else if (message_type == 0)
+     {
+        obj_chat.text[obj_chat.num] = buffer_read(msg_buff, buffer_string);
+        obj_chat.sender[obj_chat.num] = user[sender].name;
+        obj_chat.num++;        
+     }
+     else if (message_type == 1)
+     {
+        private_id = buffer_read(msg_buff, buffer_s16);
+        if (show_question(user[sender].name + " invites you to private chat."))
+            accept = true;
+     }
+     else if (message_type == 2)
+     {
+        user[sender].private = true;
+     }
+     else if (message_type == 3)
+     {
+        user[sender].private = false;
+     }
             break;
             
             case 2:

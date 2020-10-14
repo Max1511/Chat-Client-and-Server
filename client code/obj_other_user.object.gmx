@@ -3,7 +3,7 @@
   <solid>0</solid>
   <visible>-1</visible>
   <depth>0</depth>
-  <persistent>0</persistent>
+  <persistent>-1</persistent>
   <parentName>&lt;undefined&gt;</parentName>
   <maskName>&lt;undefined&gt;</maskName>
   <events>
@@ -24,7 +24,8 @@
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>name = "";
+            <string>name = "NON";
+private = false;
 </string>
           </argument>
         </arguments>

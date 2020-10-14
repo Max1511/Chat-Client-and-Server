@@ -1,5 +1,5 @@
 <object>
-  <spriteName>spr_input</spriteName>
+  <spriteName>spr_logoff_button</spriteName>
   <solid>0</solid>
   <visible>-1</visible>
   <depth>0</depth>
@@ -24,42 +24,7 @@
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>write = false;
-enter = false;
-
-message = "";
-limit = 100;
-
-cursor = "";
-delay = 20;
-</string>
-          </argument>
-        </arguments>
-      </action>
-    </event>
-    <event eventtype="2" enumb="0">
-      <action>
-        <libid>1</libid>
-        <id>603</id>
-        <kind>7</kind>
-        <userelative>0</userelative>
-        <isquestion>0</isquestion>
-        <useapplyto>-1</useapplyto>
-        <exetype>2</exetype>
-        <functionname></functionname>
-        <codestring></codestring>
-        <whoName>self</whoName>
-        <relative>0</relative>
-        <isnot>0</isnot>
-        <arguments>
-          <argument>
-            <kind>1</kind>
-            <string>if (cursor=="|")
-    cursor = "";
-else
-    cursor = "|";
-if (write)
-    alarm[0] = delay;
+            <string>enter = false;
 </string>
           </argument>
         </arguments>
@@ -82,27 +47,16 @@ if (write)
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>if (enter &amp;&amp; !write)
+            <string>if (enter)
 {
-    if (mouse_check_button_pressed(mb_left))
+    if (mouse_check_button_released(mb_left))
     {
-        write = true;
-        alarm[0] = delay;
+        for (var i = 0; i &lt; obj_network.max_users; ++i)
+            if (obj_network.user[i] != -1)
+                if (obj_network.user[i].private)
+                    obj_network.user[i].private = false;
+        obj_network.logoff = true;
     }
-}
-else if (!enter)
-{
-    if (mouse_check_button_pressed(mb_left))
-    {
-        write = false;
-    }
-}
-if (write)
-{
-    if (string_length(keyboard_string) &lt; limit) 
-        message = keyboard_string;
-    else
-        keyboard_string = message;
 }
 </string>
           </argument>
@@ -173,9 +127,9 @@ if (write)
           <argument>
             <kind>1</kind>
             <string>draw_self();
-draw_set_halign(fa_left);
+draw_set_halign(fa_center);
 draw_set_colour(c_black);
-draw_text(x, y, message + cursor);
+draw_text(x, y+8, "Exit private chat");
 </string>
           </argument>
         </arguments>
